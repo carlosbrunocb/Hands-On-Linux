@@ -15,6 +15,7 @@ const int resolution = 8;   // Resolução do PWM (8 bits = 0-255)
 // --- Variáveis globais de estado ---
 int thresholdValue = 50;   // Limiar de ativação automática do LED (0-100)
 int ledValue = 0;          // Intensidade do LED atual (0-100). Inicialmente apagado.
+int ldrValue = 0;
 
 // --- Controle do envio periódico (GET_LDR) ---
 unsigned long lastSendTime = 0;
@@ -37,6 +38,7 @@ void setup() {
   // ledcAttach(LED_PIN, ledChannel, resolution);
   
   // Inicializa o LED no valor inicial (0)
+  pinMode(LED_PIN, OUTPUT);
   ledUpdate(); 
   
   Serial.println("SmartLamp Initialized.");
@@ -53,17 +55,13 @@ void loop() {
 
   // --- Envio periódico do valor do LDR (RES GET_LDR Z) ---
   if (millis() - lastSendTime >= sendInterval) {
-    int ldrValue = ldrGetValue();
+    ldrValue = ldrGetValue();
     // Usa Serial.printf para formatação eficiente e adição do '\n'
     Serial.printf("RES GET_LDR %d\n", ldrValue);
     lastSendTime = millis();
     
-    // Lógica opcional de controle automático
-    // Se a leitura for MAIOR que o threshold, acende o LED
-    if (ldrValue > thresholdValue) {
-        // Exemplo: define um brilho mínimo se acender automaticamente
-        // Aqui, optamos por não mudar ledValue automaticamente para respeitar o protocolo SET_LED
-    }
+    ledValue = ldrValue;
+    ledUpdate();
   }
 }
 
@@ -87,7 +85,10 @@ void ledUpdate() {
   // ledValue (0-100) -> pwmValue (0-255)
   // int pwmValue = map(ledValue, 0, 100, 0, 255);
   // ledcWrite(ledChannel, pwmValue);
-  if (ledValue > 50) {
+  // ledValue = ldrValue;
+
+  // se o valor for maior que o threshold acende o led
+  if (ledValue > thresholdValue) {
     digitalWrite(LED_PIN, HIGH); // turn on LED
   } else {
     digitalWrite(LED_PIN, LOW); // turn on LED
